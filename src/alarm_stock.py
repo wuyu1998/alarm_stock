@@ -477,7 +477,6 @@ class KlineInfo:
 
     def download_new_data(self):
         ''' 下载最新行情 '''
-        pdb.set_trace()
         arr_code = list(self.info_stock.keys())
         start_date = min([
                 obj.get_last_date(self.period_base)
