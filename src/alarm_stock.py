@@ -453,12 +453,15 @@ class KlineInfo:
     info_program = None
     # 报警信息的内容
     arr_alarm_msg = None
+    # k线分析周期
+    period_base = None
 
     def __init__(self):
+        self.period_base = '1m'
         self.info_program = {}
         self.info_stock = {}
         self.obj_DataTable = DataTable()
-        self.obj_DataSource = JqData()
+        self.obj_DataSource = JqData(self.obj_DataTable)
         # 获取报警信息(k线数据，报警程序)
         self.get_alarm_info()
 
@@ -474,18 +477,18 @@ class KlineInfo:
 
     def download_new_data(self):
         ''' 下载最新行情 '''
-        period_base = '1m'
+        pdb.set_trace()
         arr_code = list(self.info_stock.keys())
         start_date = min([
-                obj.get_last_date(period_base)
+                obj.get_last_date(self.period_base)
                 for obj in self.info_stock.values()
                 ])
         info = self.obj_DataSource.get_data_missing(
-                arr_code, period_base, start_date, offset_right=True,
+                arr_code, self.period_base, start_date, offset_right=True,
                 )
         for code, df in info.items():
             obj_stock = self.info_stock[code]
-            df_new = obj_stock.data_merge(period_base, df)
+            df_new = obj_stock.data_merge(self.period_base, df)
             if df_new.empty:
                 continue
             # 下载数据，写入数据表
@@ -507,7 +510,8 @@ class KlineInfo:
                 if obj_code is None:
                     stock_name = df_name.loc[stock_code, 'display_name']
                     obj_code = SingleStockInfo(
-                            stock_code, stock_name, obj_db=self.obj_DataTable,
+                            stock_code, stock_name, self.period_base,
+                            obj_db=self.obj_DataTable,
                             obj_source=self.obj_DataSource,
                             )
                     self.info_stock[stock_code] = obj_code
@@ -649,8 +653,7 @@ class SingleStockInfo:
     limit_size = 62400
 
     def __init__(
-            self, stock_code, stock_name, period_base='1m',
-            obj_db=None, obj_source=None
+            self, stock_code, stock_name, period_base, obj_db, obj_source
             ):
         ''' 实例初始化
             stock_code          股票代码
@@ -661,14 +664,8 @@ class SingleStockInfo:
         self.stock_code = stock_code
         self.stock_name = stock_name
         self.table_name = f'{stock_code}_today'
-        if obj_db is None:
-            self.obj_db = DataTable()
-        else:
-            self.obj_db = obj_db
-        if obj_source is None:
-            self.obj_source = JqData()
-        else:
-            self.obj_source = obj_source
+        self.obj_db = obj_db
+        self.obj_source = obj_source
         df = self.get_bars_history(True)
         self.data_kline = {period_base: df}
 
@@ -834,7 +831,7 @@ class QuotesDataSource(ABC):
     ''' 行情数据源 '''
     name_source_en = None
     name_source_zh = None
-    user = None
+    username = None
     password = None
 
     def __init__(self, obj_db, name_source, name_source_zh=None):
@@ -847,14 +844,6 @@ class QuotesDataSource(ABC):
         self.username = row.username
         self.password = row.password
         self.name_source = name_source
-        self.name_source_zh = name_source_zh
-
-    def __init__2(
-            self, user, password, name_source_en=None, name_source_zh=None
-            ):
-        self.user = user
-        self.password = password
-        self.name_source_en = name_source_en
         self.name_source_zh = name_source_zh
 
     def set_time_left(self, df, offset_time=Minute(1)):
@@ -954,14 +943,15 @@ class JqData(QuotesDataSource):
         >>>
     '''
 
-    def __init__(self):
+    def __init__(self, obj_db):
         super().__init__(
-                name_source_en='JoinQuant', name_source_zh='聚宽量化交易平台'
+                obj_db, name_source='JoinQuant',
+                name_source_zh='聚宽量化交易平台'
                 )
 
     def connect_server(self):
         try:
-            jqdatasdk.auth(self.user, self.password)
+            jqdatasdk.auth(self.username, self.password)
         except Exception:
             raise ValueError('聚宽服务器连接失败！')
 
