@@ -1273,15 +1273,20 @@ class SingleAlarmProgram:
         return flag
 
 
-def update_data_today(s_date=None, save_db=True, save_csv=True):
+def update_data_today(
+        s_date=None, save_db=True, save_csv=True, download_data=True
+        ):
     ''' 更新当天数据
         s_date          指定日期
             None or str
     '''
     if not (save_db or save_csv):
         return
-    s_today = datetime.date.today().isoformat()
+    if s_date is None:
+        s_date = datetime.date.today().isoformat()
     obj_KlineInfo = KlineInfo()
+    if download_data:
+        obj_KlineInfo.download_new_data()
     for obj_SingleStockInfo in obj_KlineInfo.info_stock.values():
         try:
             df_today = obj_SingleStockInfo.get_today_data(s_date)
@@ -1290,7 +1295,7 @@ def update_data_today(s_date=None, save_db=True, save_csv=True):
             if save_csv:
                 f_name = os.path.join(
                         settings.dir_data,
-                        f'{obj_SingleStockInfo.stock_code}_{s_today}.csv'
+                        f'{obj_SingleStockInfo.stock_code}_{s_date}.csv'
                         )
                 to_csv_mt5(df_today, f_name)
         except ValueError as e:
