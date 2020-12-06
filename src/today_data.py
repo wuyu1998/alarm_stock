@@ -25,8 +25,6 @@ def update_data_today(
     obj_KlineInfo = KlineInfo()
     if download_data:
         obj_KlineInfo.download_new_data()
-    if not (save_db or save_csv):
-        return
     for obj_SingleStockInfo in obj_KlineInfo.info_stock.values():
         try:
             df_today = obj_SingleStockInfo.get_today_data(s_date)
