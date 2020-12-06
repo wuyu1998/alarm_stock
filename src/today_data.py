@@ -14,6 +14,9 @@ def update_data_today(
     ''' 更新当天数据
         s_date          指定日期
             None or str
+        save_db         写入历史数据表
+        save_csv        写入csv文件 (mt5格式)
+        download_data   下载最新的数据
     '''
     if not (save_db or save_csv):
         return
@@ -22,6 +25,8 @@ def update_data_today(
     obj_KlineInfo = KlineInfo()
     if download_data:
         obj_KlineInfo.download_new_data()
+    if not (save_db or save_csv):
+        return
     for obj_SingleStockInfo in obj_KlineInfo.info_stock.values():
         try:
             df_today = obj_SingleStockInfo.get_today_data(s_date)
@@ -37,23 +42,34 @@ def update_data_today(
             logger.error(f'{e}')
 
 
-def main_2():
-    parser = argparse.ArgumentParser(description='更新当天数据')
-    parser.add_argument('--s_date', action='s_date', default=None)
-    parser.add_argument('--save_db', action='save_db', default=True)
-    parser.add_argument('--save_csv', action='save_csv', default=True)
-    parser.add_argument('--download_data', action='download_data', default=True)
-    res = parser.parse_args()
-    update_data_today(
-            s_date=res.s_date,
-            save_db=res.save_db,
-            save_csv=res.save_csv,
-            download_data=res.download_data,
+def proc_parser():
+    parser = argparse.ArgumentParser(description='补充历史数据')
+    parser.add_argument(
+            '-d', '--date', type=str, help='处理的日期', metavar='YYYY-MM-DD',
+            required=True,
             )
+    parser.add_argument(
+            '-db', '--save_db', action='store_true', help='写入历史数据表',
+            )
+    parser.add_argument(
+            '-csv', '--save_csv', action='store_true', help='写入csv文件 (mt5格式)',
+            )
+    parser.add_argument(
+            '--download', action='store_true', help='下载最新的数据',
+            )
+    res = parser.parse_args()
+    return res
 
 
 def main():
-    update_data_today()
+    print('-' * 40)
+    res = proc_parser()
+    update_data_today(
+            s_date=res.date,
+            save_db=res.save_db,
+            save_csv=res.save_csv,
+            download_data=res.download,
+            )
 
 
 if __name__ == '__main__':
