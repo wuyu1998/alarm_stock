@@ -3,8 +3,10 @@
 '''
 
 import argparse
+import datetime
 import os
 
+import settings
 from alarm_stock import KlineInfo, logger, to_csv_mt5
 
 
@@ -44,13 +46,15 @@ def proc_parser():
     parser = argparse.ArgumentParser(description='补充历史数据')
     parser.add_argument(
             '-d', '--date', type=str, help='处理的日期', metavar='YYYY-MM-DD',
-            required=True,
+            default=None,
             )
     parser.add_argument(
-            '-db', '--save_db', action='store_true', help='写入历史数据表',
+            '-db', '--save_db', action='store_true',
+            help='写入历史数据表',
             )
     parser.add_argument(
-            '-csv', '--save_csv', action='store_true', help='写入csv文件 (mt5格式)',
+            '-csv', '--save_csv', action='store_true',
+            help='写入csv文件 (mt5格式)',
             )
     parser.add_argument(
             '--download', action='store_true', help='下载最新的数据',
