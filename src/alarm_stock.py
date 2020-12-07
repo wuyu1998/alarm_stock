@@ -279,11 +279,11 @@ class DataTable:
     # 创建数据表: 报警信息
     sql_table_create__alarm_message = '''
             CREATE TABLE "alarm_message" (
+                    "s_now" TEXT NOT NULL,
                     "stock_code" TEXT NOT NULL,
                     "period" TEXT NOT NULL,
-                    "s_now" TEXT NOT NULL,
                     "message" TEXT,
-                    PRIMARY KEY ("stock_code", "period", "s_now")
+                    PRIMARY KEY ("s_now", "stock_code", "period")
                     );
             '''
     # 创建数据表: 数据源账号
@@ -387,11 +387,12 @@ class DataTable:
 
     def read_db__alarm_program(self):
         ''' 读取数据表: 报警程序 '''
-        df = pd.read_sql('alarm_program_info', con=self.engine)
+        t_name = 'alarm_program_info'
+        df = pd.read_sql(t_name, con=self.engine)
         return df
 
-    def save_db__alarm_message(self, df):
-        ''' 报警信息写入数据表 '''
+    def save_db__alarm_program(self, df):
+        ''' 报警程序写入数据表 '''
         t_name = 'alarm_program_info'
         if not self.table_is_exists(t_name):
             self.table_create__alarm_program(t_name)
@@ -399,7 +400,7 @@ class DataTable:
 
     def read_db__alarm_message(self):
         ''' 读取数据表: 报警信息 '''
-        index_name = ['stock_code', 'period', 's_now']
+        index_name = ['s_now', 'stock_code', 'period']
         df = pd.read_sql('alarm_message', con=self.engine, index_col=index_name)
         return df
 
@@ -573,8 +574,8 @@ class KlineInfo:
         return tuple(arr_msg_new)
 
     def save_alarm_message(self):
-        arr_column = ['stock_code', 'period', 's_now', 'message']
-        index_name = ['stock_code', 'period', 's_now']
+        arr_column = ['s_now', 'stock_code', 'period', 'message']
+        index_name = ['s_now', 'stock_code', 'period']
         df = pd.DataFrame(self.arr_alarm_msg, columns=arr_column)
         df.set_index(index_name, inplace=True)
         self.obj_DataTable.save_db__alarm_message(df)
