@@ -3,6 +3,7 @@
 '''
 
 import datetime
+import os
 import tkinter as tk
 import tkinter.ttk as ttk
 import vlc
@@ -13,22 +14,26 @@ import settings as settings
 class Application(ttk.Frame):
     # 闭市后，监控程序继续运行的时间
     t_continue_run = datetime.timedelta(seconds=settings.n_continue_run)
+    # k线数据对象实例 (用在所有的报警算法中)
+    obj_KlineInfo = None
+    # vlc
+    obj_sound = None
+    # 仅第一次运行
+    only_once = None
 
     def __init__(self, master=None):
         super().__init__(master)
-        self.init_gui()
-        self.update_clock()
-
-    def init_gui(self):
-        pass
+        self.init_alarm_program()
+        self.create_UI()
+        # self.update_clock()
+        self.load_message()
 
     def update_clock(self):
+        ''' 更新定时器 '''
         now = datetime.datetime.now()
         delta_seconds, delta_microseconds = self.calc_delta_time(now)
-        x_after = self.root.after(
-                int(delta_seconds * 1000 + delta_microseconds / 1000.0),
-                self.update_clock
-                )
+        delta_time = int(delta_seconds * 1000 + delta_microseconds / 1000.0)
+        x_after = self.master.after(delta_time, self.update_clock)
 
     def calc_delta_time(self, now):
         ''' 计算休眠时间 '''
@@ -82,9 +87,96 @@ class Application(ttk.Frame):
         self.obj_sound.stop()
         self.obj_sound.play()
 
+    def job(self):
+        ''' 定时执行的任务 '''
+        obj = self.obj_KlineInfo
+        try:
+            flag = obj.run_cron(self)
+            if flag and not self.only_once:
+                self.play_audio()
+        except ValueError as e:
+            logger.error(f'{e}')
+        else:
+            if self.only_once:
+                self.only_once = False
+
+    def init_alarm_program(self):
+        ''' 初始报警程序 '''
+        self.only_once = True
+        self.obj_KlineInfo = a_s.KlineInfo()
+        self.init_audio()
+
+    def create_UI(self):
+        ''' 初始化窗口控件 '''
+        self.gui_alarm_program()
+        self.gui_alarm_message()
+        self.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+    def gui_alarm_program(self):
+        ''' 界面: 报警程序 '''
+        tp = ttk.Treeview(self, columns='capital')
+        df_stock_code = self.obj_KlineInfo.obj_DataTable.read_db__stock_code()
+        for key, obj_program in self.obj_KlineInfo.info_program.items():
+            info = obj_program.info_program
+            # 文件名
+            program_name = tp.insert(
+                    '', 'end', text=info['algorithm'], values=info['remark'],
+                    )
+            # 监控的股票
+            stock_info = tp.insert(program_name, 'end', text='股票信息')
+            for stock_code in info['arr_stock_code']:
+                tp.insert(
+                        stock_info, 'end', text=stock_code,
+                        values=df_stock_code.loc[stock_code].display_name,
+                        )
+            # k线周期
+            period_info = tp.insert(program_name, 'end', text='k线周期')
+            for period in info['arr_period']:
+                tp.insert(period_info, 'end', text=period)
+            # 附加信息
+            other_info = tp.insert(program_name, 'end', text='附加信息')
+            for key, value in info['other_kwargs'].items():
+                tp.insert(other_info, 'end', text=key, values=value)
+        tp.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+        self.tree_program = tp
+
+    def gui_alarm_message(self):
+        ''' 界面: 报警信息 '''
+        tm = ttk.Treeview(self, columns='capital')
+        tm['columns'] =('stock_code', 'period', 'message')
+        tm.heading('#0', text='报警时间', anchor='w')
+        tm.column('#0', anchor='w')
+        tm.heading('stock_code', text='股票代码')
+        tm.column('stock_code', anchor='e')
+        tm.heading('period', text='k线周期')
+        tm.column('period', anchor='e')
+        tm.heading('message', text='信息')
+        tm.column('message', anchor='e')
+        tm.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+        self.table_message = tm
+
+    def load_message(self):
+        ''' 读取数据表: 报警信息 '''
+        s_today = datetime.date.today().isoformat()
+        df = self.obj_KlineInfo.obj_DataTable.read_db__alarm_message()
+        for k, v in df.iterrows():
+            s_now, stock_code, period = k
+            # if s_now != s_today:
+            #     continue
+            self.table_message.insert(
+                    '', 'end', text=s_now,
+                    values=(stock_code, period, v.message)
+                    )
 
 
+def main():
+    root = tk.Tk()
+    app = Application(root)
+    root.mainloop()
 
-root = tk.Tk()
-app = App(root)
-root.mainloop()
+
+if __name__ == '__main__':
+    main()
+
