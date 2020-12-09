@@ -4,6 +4,7 @@
 
 import datetime
 import os
+import pandas as pd
 import tkinter as tk
 import tkinter.ttk as ttk
 import vlc
@@ -23,13 +24,15 @@ class Application(ttk.Frame):
 
     def __init__(self, master=None):
         super().__init__(master)
+        self.only_once = True
         self.init_alarm_program()
         self.create_UI()
-        # self.update_clock()
+        self.update_clock()
         self.load_message()
 
     def update_clock(self):
         ''' 更新定时器 '''
+        self.job()
         now = datetime.datetime.now()
         delta_seconds, delta_microseconds = self.calc_delta_time(now)
         delta_time = int(delta_seconds * 1000 + delta_microseconds / 1000.0)
@@ -139,12 +142,15 @@ class Application(ttk.Frame):
             other_info = tp.insert(program_name, 'end', text='附加信息')
             for key, value in info['other_kwargs'].items():
                 tp.insert(other_info, 'end', text=key, values=value)
-        tp.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+        tp.grid(column=1, row=0, sticky=(tk.N, tk.S, tk.W, tk.E))
         self.tree_program = tp
 
     def gui_alarm_message(self):
         ''' 界面: 报警信息 '''
         tm = ttk.Treeview(self, columns='capital')
+        y_scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=tm.yview)
+
+        y_scrollbar.grid(column=0, row=1, sticky=(tk.N, tk.W, tk.E, tk.S))
         tm['columns'] =('stock_code', 'period', 'message')
         tm.heading('#0', text='报警时间', anchor='w')
         tm.column('#0', anchor='w')
@@ -154,20 +160,25 @@ class Application(ttk.Frame):
         tm.column('period', anchor='e')
         tm.heading('message', text='信息')
         tm.column('message', anchor='e')
-        tm.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+        tm.grid(column=1, row=1, sticky=(tk.N, tk.S, tk.W, tk.E))
+        tm.configure(yscrollcommand=y_scrollbar.set)
+
         self.table_message = tm
+        self.y_scrollbar = y_scrollbar
 
     def load_message(self):
-        ''' 读取数据表: 报警信息 '''
-        s_today = datetime.date.today().isoformat()
+        ''' 读取数据表: 报警信息
+        只显示当天的记录。
+        '''
+        today = datetime.date.today()
         df = self.obj_KlineInfo.obj_DataTable.read_db__alarm_message()
+        df.sort_index(inplace=True)
         for k, v in df.iterrows():
             s_now, stock_code, period = k
-            # if s_now != s_today:
-            #     continue
+            if pd.Timestamp(s_now).date() != today:
+                continue
             self.table_message.insert(
-                    '', 'end', text=s_now,
-                    values=(stock_code, period, v.message)
+                    '', 0, text=s_now, values=(stock_code, period, v.message)
                     )
 
 

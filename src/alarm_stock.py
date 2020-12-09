@@ -578,6 +578,7 @@ class KlineInfo:
         index_name = ['s_now', 'stock_code', 'period']
         df = pd.DataFrame(self.arr_alarm_msg, columns=arr_column)
         df.set_index(index_name, inplace=True)
+        df.sort_index(inplace=True)
         self.obj_DataTable.save_db__alarm_message(df)
         logger.debug(f'save_alarm_message() ...\n{df}')
         return df
