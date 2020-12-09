@@ -28,6 +28,7 @@ class Application(ttk.Frame):
         self.init_alarm_program()
         self.create_UI()
         self.update_clock()
+        self.load_program()
         self.load_message()
 
     def update_clock(self):
@@ -125,28 +126,6 @@ class Application(ttk.Frame):
         frame.grid_columnconfigure(0, weight=1)
 
         tp = ttk.Treeview(frame, columns='capital')
-        df_stock_code = self.obj_KlineInfo.obj_DataTable.read_db__stock_code()
-        for key, obj_program in self.obj_KlineInfo.info_program.items():
-            info = obj_program.info_program
-            # 文件名
-            program_name = tp.insert(
-                    '', 'end', text=info['algorithm'], values=info['remark'],
-                    )
-            # 监控的股票
-            stock_info = tp.insert(program_name, 'end', text='股票信息')
-            for stock_code in info['arr_stock_code']:
-                tp.insert(
-                        stock_info, 'end', text=stock_code,
-                        values=df_stock_code.loc[stock_code].display_name,
-                        )
-            # k线周期
-            period_info = tp.insert(program_name, 'end', text='k线周期')
-            for period in info['arr_period']:
-                tp.insert(period_info, 'end', text=period)
-            # 附加信息
-            other_info = tp.insert(program_name, 'end', text='附加信息')
-            for key, value in info['other_kwargs'].items():
-                tp.insert(other_info, 'end', text=key, values=value)
         tp.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
 
         self.tree_program = tp
@@ -178,6 +157,32 @@ class Application(ttk.Frame):
         self.y_scrollbar = y_scrollbar
         self.table_message = tm
         self.frame_message = frame
+
+    def load_program(self):
+        ''' 读取数据表: 报警程序 '''
+        tp = self.tree_program
+        df_stock_code = self.obj_KlineInfo.obj_DataTable.read_db__stock_code()
+        for key, obj_program in self.obj_KlineInfo.info_program.items():
+            info = obj_program.info_program
+            # 文件名
+            program_name = tp.insert(
+                    '', 'end', text=info['algorithm'], values=info['remark'],
+                    )
+            # 监控的股票
+            stock_info = tp.insert(program_name, 'end', text='股票信息')
+            for stock_code in info['arr_stock_code']:
+                tp.insert(
+                        stock_info, 'end', text=stock_code,
+                        values=df_stock_code.loc[stock_code].display_name,
+                        )
+            # k线周期
+            period_info = tp.insert(program_name, 'end', text='k线周期')
+            for period in info['arr_period']:
+                tp.insert(period_info, 'end', text=period, values=[period])
+            # 附加信息
+            other_info = tp.insert(program_name, 'end', text='附加信息')
+            for key, value in info['other_kwargs'].items():
+                tp.insert(other_info, 'end', text=key, values=value)
 
     def load_message(self):
         ''' 读取数据表: 报警信息
