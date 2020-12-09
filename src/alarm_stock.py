@@ -1196,7 +1196,7 @@ class SingleAlarmProgram:
         返回值: tuple
 
         self.algorithm()的返回值: ValueError or list
-            [(stock_code, period, s_now, message), ...]
+            [(s_now, stock_code, period, message), ...]
         '''
         # 当天k线周期的时间序列
         info_time_range = {}

@@ -104,9 +104,9 @@ class MacdCross:
                 msg = None
             if msg:
                 record = (
+                        df_macd.index[j].strftime('%Y-%m-%d %H:%M'),
                         self.stock_code,
                         self.period,
-                        df_macd.index[j].strftime('%Y-%m-%d %H:%M'),
                         msg,
                         )
                 arr_cross.append(record)
@@ -127,7 +127,7 @@ def alarm_algorithm(info):
             "2020-11-14 21:17"
     返回值, ValueError or list
         [
-                (stock_code, period, s_now, message),
+                (s_now, stock_code, period, message),
                 ...
                 ]
     '''
