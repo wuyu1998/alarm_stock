@@ -1,0 +1,8 @@
+pandas==0.25.3
+pandarallel
+SQLAlchemy
+jqdatasdk
+python-dateutil
+python-vlc
+schedule
+TA-Lib
