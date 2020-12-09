@@ -70,11 +70,11 @@ class Application(ttk.Frame):
                 else:
                     # 周一..周四
                     wait_day = datetime.timedelta(days=1)
-                next_time = tm_am_begin + wait_day
+                next_time = t_am_begin + wait_day
         else:
             # 周末
             wait_day = datetime.timedelta(days=7 - now_weekday)
-            next_time = tm_am_begin + wait_day
+            next_time = t_am_begin + wait_day
         delta_time = next_time - now
         return (delta_time.seconds, delta_time.microseconds)
 
@@ -119,7 +119,12 @@ class Application(ttk.Frame):
 
     def gui_alarm_program(self):
         ''' 界面: 报警程序 '''
-        tp = ttk.Treeview(self, columns='capital')
+        frame = ttk.Frame(self)
+        frame.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
+
+        tp = ttk.Treeview(frame, columns='capital')
         df_stock_code = self.obj_KlineInfo.obj_DataTable.read_db__stock_code()
         for key, obj_program in self.obj_KlineInfo.info_program.items():
             info = obj_program.info_program
@@ -142,15 +147,19 @@ class Application(ttk.Frame):
             other_info = tp.insert(program_name, 'end', text='附加信息')
             for key, value in info['other_kwargs'].items():
                 tp.insert(other_info, 'end', text=key, values=value)
-        tp.grid(column=1, row=0, sticky=(tk.N, tk.S, tk.W, tk.E))
+        tp.grid(sticky=(tk.N, tk.S, tk.W, tk.E))
+
         self.tree_program = tp
+        self.frame_program = frame
 
     def gui_alarm_message(self):
         ''' 界面: 报警信息 '''
-        tm = ttk.Treeview(self, columns='capital')
-        y_scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=tm.yview)
+        frame = ttk.Frame(self)
+        frame.grid()
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
 
-        y_scrollbar.grid(column=0, row=1, sticky=(tk.N, tk.W, tk.E, tk.S))
+        tm = ttk.Treeview(frame, columns='capital')
         tm['columns'] =('stock_code', 'period', 'message')
         tm.heading('#0', text='报警时间', anchor='w')
         tm.column('#0', anchor='w')
@@ -160,11 +169,15 @@ class Application(ttk.Frame):
         tm.column('period', anchor='e')
         tm.heading('message', text='信息')
         tm.column('message', anchor='e')
-        tm.grid(column=1, row=1, sticky=(tk.N, tk.S, tk.W, tk.E))
+        tm.grid(column=1, row=0, sticky=(tk.N, tk.S, tk.W, tk.E))
+
+        y_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tm.yview)
+        y_scrollbar.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         tm.configure(yscrollcommand=y_scrollbar.set)
 
-        self.table_message = tm
         self.y_scrollbar = y_scrollbar
+        self.table_message = tm
+        self.frame_message = frame
 
     def load_message(self):
         ''' 读取数据表: 报警信息
