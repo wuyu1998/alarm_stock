@@ -758,10 +758,12 @@ class SingleStockInfo:
         '''
         df = self.data_kline[self.period_base]
         if s_date is None:
-            today = datetime.date.today()
+            today = datetime.datetime.now().date()
         else:
-            today = s_date
-        df_today = df.loc[pd.Timestamp(today) <= df.index]
+            today = dateutil.parser.parse(s_date)
+        tomorrow = (today + datetime.timedelta(days=1)).date()
+        df_2 = df.loc[pd.Timestamp(today) <= df.index]
+        df_today = df_2.loc[df_2.index < pd.Timestamp(tomorrow)]
         return df_today
 
     def save_to_history(self, df_today):
