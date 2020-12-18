@@ -371,6 +371,23 @@ class DataTable:
             raise ValueError(f'{t_name}数据表不存在')
         return df
 
+    def read_db__kline__last_time(self, t_name):
+        ''' 从数据表读取k线数据的最后时间
+        入口参数:
+            t_name          数据表名
+        返回值:
+            None or pandas.Timstamp
+        '''
+        last_time = None
+        if self.table_is_exists(t_name):
+            sql = f'select "date" from "{t_name}" order by "date" desc limit 1;'
+            df = pd.read_sql(sql, con=self.engine)
+            if not df.empty:
+                last_time = pd.Timestamp(obj.date[0])
+        else:
+            self.table_create(t_name)
+        return last_time
+
     def save_db__kline(self, df, t_name):
         ''' k线数据写入数据表 '''
         if not self.table_is_exists(t_name):
@@ -767,16 +784,55 @@ class SingleStockInfo:
         df_today = df_2.loc[df_2.index < pd.Timestamp(tomorrow)]
         return df_today
 
-    def save_to_history(self, df_today):
+    def save_to_history(self, df_today=None):
         ''' 今天的数据保存到历史表
-            s_date           指定日期
-                None or pandas.Timestamp
+        入口参数:
+            df_today        今天的数据
+                None                全部数据，导入历史表
+                pd.DataFrame        指定日期的数据，导入历史表
         '''
+        def select_year(df, year):
+            ''' 按年份选取数据 '''
+            obj = df.loc[pandas.Timestamp(year, 1, 1) <= df.index]
+            obj_2 = obj.loc[obj.index < pandas.Timestamp(year+1, 1, 1)]
+            return obj_2
+
+        def group_year(df):
+            ''' 按年份分组数据 '''
+            year_begin, year_end = df.index[[0, -1]].year
+            assert year_begin < year_end, 'df.index顺序错误'
+            arr = [
+                    (year, select_year(df, year))
+                    for year in range(year_begin, year_end + 1)
+                    ]
+            return arr
+
+        last_time = None
         year = datetime.date.today().year
-        if not df_today.empty:
-            t_name = f'{self.stock_code}_{year}'
-            if not self.obj_db.table_is_exists(t_name):
-                self.obj_db.table_create(t_name)
+        t_name = f'{self.stock_code}_{year}'
+        flag_table_exist =self.obj_db.table_is_exists(t_name)
+        if not flag_table_exist:
+            self.obj_db.table_create(t_name)
+        if df_today is None:
+            # 保存缺失数据
+            if flag_table_exist:
+                last_time = self.obj_db.read_db__kline__last_time(t_name)
+            df = self.obj_db.read_db__kline(self.table_name)
+            if last_time:
+                df = df.loc[last_time < df.index]
+            # 检查year
+            if df.index[0].year == year:
+                self.obj_db.save_db__kline(df, t_name)
+            else:
+                # 跨年
+                arr = group_year(df)
+                for year, df in arr:
+                    t_name = f'{self.stock_code}_{year}'
+                    if not self.obj_db.table_is_exists(t_name):
+                        self.obj_db.table_create(t_name)
+                    self.obj_db.save_db__kline(df, t_name)
+        elif not df_today.empty:
+            # 保存指定日期的数据
             self.obj_db.save_db__kline(df_today, t_name)
 
     def save_today_data_to_csv(self):
