@@ -383,7 +383,7 @@ class DataTable:
             sql = f'select "date" from "{t_name}" order by "date" desc limit 1;'
             df = pd.read_sql(sql, con=self.engine)
             if not df.empty:
-                last_time = pd.Timestamp(obj.date[0])
+                last_time = pd.Timestamp(df.date[0])
         else:
             self.table_create(t_name)
         return last_time
