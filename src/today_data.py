@@ -42,12 +42,12 @@ def update_data_today(
 def proc_parser():
     parser = argparse.ArgumentParser(description='补充历史数据')
     parser.add_argument(
-            '-d', '--date', type=str, help='处理的日期', metavar='YYYY-MM-DD',
-            default=None,
+            '-d', '--date', type=str, metavar='YYYY-MM-DD',
+            default=None, help='处理的日期（缺省值None，当天）',
             )
     parser.add_argument(
             '-csv', '--save_csv', action='store_true',
-            help='写入csv文件 (mt5格式)',
+            help='写入csv文件（mt5格式）',
             )
     parser.add_argument(
             '--download', action='store_true', help='下载最新的数据',
