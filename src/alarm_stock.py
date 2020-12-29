@@ -784,6 +784,16 @@ class SingleStockInfo:
         df_today = df_2.loc[df_2.index < pd.Timestamp(tomorrow)]
         return df_today
 
+    def get_after_data(self, s_date):
+        ''' 导出指定日期之后的数据，不包含s_date
+            s_date           指定日期
+                None or str
+        '''
+        df = self.data_kline[self.period_base]
+        after_date = dateutil.parser.parse(s_date)
+        df_after = df.loc[pd.Timestamp(after_date) < df.index]
+        return df_after
+
     def save_to_history(self, df_today=None):
         ''' 今天的数据保存到历史表
         入口参数:
