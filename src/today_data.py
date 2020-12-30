@@ -20,8 +20,9 @@ def update_data_today(
         download_data   下载最新的数据
         after_date      导出指定日期之后的数据，csv格式
     '''
-    if s_date is None:
-        s_date = datetime.date.today().isoformat()
+    s_today = datetime.date.today().isoformat()
+    if after_date is None and s_date is None:
+        s_date = s_today
     obj_KlineInfo = KlineInfo()
     if download_data:
         obj_KlineInfo.download_new_data()
@@ -41,7 +42,7 @@ def update_data_today(
                 df = obj_SingleStockInfo.get_after_data(after_date)
                 f_name = os.path.join(
                         settings.dir_data,
-                        f'{obj_SingleStockInfo.stock_code}.csv'
+                        f'{obj_SingleStockInfo.stock_code}_{s_today}.csv'
                         )
                 to_csv_mt5(df, f_name)
         except ValueError as e:
