@@ -393,11 +393,11 @@ class DataTable:
             self.table_create__kline(t_name)
         df.to_sql(t_name, con=self.engine, if_exists='append', chunksize=1000)
 
-    def read_db__stock_code(self):
+    def read_db__stock_code(self, arr_column=['code', 'display_name']):
         ''' 读取数据表: 股票代码 '''
         df = pd.read_sql(
                 'stock_code_info', con=self.engine, index_col='code',
-                columns=['code', 'display_name'],
+                columns=arr_column,
                 )
         return df
 
@@ -448,6 +448,14 @@ class DataTable:
         self.table_create__alarm_program()
         self.table_create__alarm_message()
         self.table_create__QuotesDataSource_account()
+
+    def read_db(self, t_name):
+        '读取数据表'
+        if self.table_is_exists(t_name):
+            df = pd.read_sql(t_name, con=self.engine)
+        else:
+            raise ValueError(f'{t_name}数据表不存在')
+        return df
 
 
 class KlineInfo:

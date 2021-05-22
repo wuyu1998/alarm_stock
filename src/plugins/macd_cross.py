@@ -135,3 +135,19 @@ def alarm_algorithm(info):
     arr_cross = obj.run()
     return arr_cross
 
+
+example_parameter = {
+        'root': {
+                'stock_code': '股票代码列表', 
+                'period': 'k线周期列表',
+                'other_kwargs': '算法的参数',
+                'remark': '算法的备注', # 缺省值：macd_cross.__doc__的第一行
+                },
+        # other_kwargs的下级选项
+        'other_kwargs__cascade': {'price_type': '价格类型'},
+        # price_type的值
+        'price_type__value': {
+                'open': '开盘价',
+                'close': '收盘价'
+                },
+        }
